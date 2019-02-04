@@ -24,7 +24,8 @@ class TrainData_DiTau(TrainData):
         self.registerBranches(self.truthclasses)
         self.registerBranches(self.undefTruth)
 
-        self.referenceclass='isB' # 'flatten' or class name
+        #self.referenceclass='isTauHTauH' # 'flatten' or class name
+        self.referenceclass='flatten'
         self.weightbranchX='jet_pt'
         self.weightbranchY='jet_eta'
 
@@ -40,8 +41,8 @@ class TrainData_DiTau(TrainData):
             dtype=float
             )
 
-        self.weight=False
-        self.remove=True
+        self.weight=True
+        self.remove=False
         self.removeUnderOverflow = True 
     
         
@@ -189,30 +190,41 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
             weights=numpy.empty(self.nsamples)
             weights.fill(1.)
 
+        truthtuple = Tuple[self.truthclasses]
+        alltruth = self.reduceTruth(truthtuple)
+
         # remove extra jets so that there are the same number of jets in each 
         # reduced truth category
         # This seems to work, but the numbers still aren't equal...
-        truthcounts = weighter.totalcounts
-        countmap = dict(zip(self.truthclasses,truthcounts))
-        truthtuple = Tuple[self.truthclasses]
-        alltruth = self.reduceTruth(truthtuple)
+        # likely this is coming from the difference between processed jets and the reweighted/removed jets
+        # need to grab the remove probs and correct
+        #truthcounts = weighter.totalcounts
+        #countmap = dict(zip(self.truthclasses,truthcounts))
+        ##print(countmap)
+        #if hasattr(self,'reducedtruthmap'):
+        #    sums = {truth:0 for truth in self.reducedtruthclasses}
+        #    for t in self.truthclasses:
+        #        for truth in self.reducedtruthclasses:
+        #            if t in self.reducedtruthmap[truth]:
+        #                sums[truth] += countmap[t]
+        #    ref = sums[self.reducedreferenceclass]
+        #    keepfracs = {truth: float(ref)/sums[truth] for truth in self.reducedtruthclasses}
+        #    for i,row in enumerate(iter(alltruth)):
+        #        for t,truth in enumerate(self.reducedtruthclasses):
+        #            if row[t]==1:
+        #                if self.remove:
+        #                    rand = numpy.random.ranf()
+        #                    if rand>keepfracs[truth]:
+        #                        notremoves[i] = 0
+        #                elif self.weight:
+        #                    weights[i] = weights[i]*keepfracs[truth]
+
+        # scale down by number of classes in a reduced class
         if hasattr(self,'reducedtruthmap'):
-            sums = {truth:0 for truth in self.reducedtruthclasses}
-            for t in self.truthclasses:
-                for truth in self.reducedtruthclasses:
-                    if t in self.reducedtruthmap[truth]:
-                        sums[truth] += countmap[t]
-            ref = sums[self.reducedreferenceclass]
-            keepfracs = {truth: float(ref)/sums[truth] for truth in self.reducedtruthclasses}
             for i,row in enumerate(iter(alltruth)):
                 for t,truth in enumerate(self.reducedtruthclasses):
                     if row[t]==1:
-                        if self.remove:
-                            rand = numpy.random.ranf()
-                            if rand>keepfracs[truth]:
-                                notremoves[i] = 0
-                        elif self.weight:
-                            weights[i] = weights[i]*keepfracs[truth]
+                        weights[i] = weights[i]*1./len(self.reducedtruthmap[truth])
 
 
         if self.remove:
