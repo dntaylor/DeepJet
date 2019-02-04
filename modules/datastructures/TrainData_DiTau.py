@@ -15,11 +15,14 @@ class TrainData_DiTau(TrainData):
         #define truth:
         self.treename = "deepntuplizerCA8/tree"
         self.undefTruth=['isUndefined']
-        self.truthclasses=['isB','isBB','isGBB','isLeptonicB','isLeptonicB_C','isC','isCC',
-                           'isGCC','isUD','isS','isG',
+        self.truthclasses=['isB','isBB','isGBB',
+                           #'isLeptonicB','isLeptonicB_C',
+                           'isC','isCC','isGCC',
+                           'isUD','isS','isG',
                            'isTauHTauH','isTauHTauM','isTauHTauE',
-                           'isTauMTauM','isTauMTauE','isTauETauE',
-                           'isTauH','isTauM','isTauE']
+                           #'isTauMTauM','isTauMTauE','isTauETauE',
+                           #'isTauH','isTauM','isTauE',
+                           ]
 
         self.registerBranches(self.truthclasses)
         self.registerBranches(self.undefTruth)
@@ -43,7 +46,6 @@ class TrainData_DiTau(TrainData):
 
         self.weight=True
         self.remove=False
-        self.removeUnderOverflow = True 
     
         
 class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
@@ -176,10 +178,11 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
         
         Tuple = self.readTreeFromRootToTuple(filename)
 
+        undef=Tuple['isUndefined']
         if self.remove:
             notremoves=weighter.createNotRemoveIndices(Tuple)
-            undef=Tuple['isUndefined']
-            notremoves-=undef
+            notremoves -= undef
+            
 
         if self.weight:
             weights=weighter.getJetWeights(Tuple)
@@ -226,17 +229,40 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
                     if row[t]==1:
                         weights[i] = weights[i]*1./len(self.reducedtruthmap[truth])
 
+        # pt cut
+        pt = Tuple['jet_pt']
+        weights   = weights[ pt > 30]
+        x_global  = x_global[pt > 30]
+        x_cpf     = x_cpf[   pt > 30]
+        x_npf     = x_npf[   pt > 30]
+        x_sv      = x_sv[    pt > 30]
+        alltruth  = alltruth[pt > 30]
 
         if self.remove:
-            weights=weights[notremoves > 0]
-            x_global=x_global[notremoves > 0]
-            x_cpf=x_cpf[notremoves > 0]
-            x_npf=x_npf[notremoves > 0]
-            x_sv=x_sv[notremoves > 0]
-            alltruth=alltruth[notremoves > 0]
+            weights   = weights[ notremoves > 0]
+            x_global  = x_global[notremoves > 0]
+            x_cpf     = x_cpf[   notremoves > 0]
+            x_npf     = x_npf[   notremoves > 0]
+            x_sv      = x_sv[    notremoves > 0]
+            alltruth  = alltruth[notremoves > 0]
+
+        if self.weight:
+            x_global  = x_global[weights > 0]
+            x_cpf     = x_cpf[   weights > 0]
+            x_npf     = x_npf[   weights > 0]
+            x_sv      = x_sv[    weights > 0]
+            alltruth  = alltruth[weights > 0]
+            weights   = weights[ weights > 0]
+
+        weights   = weights[ numpy.any(alltruth, axis=1)]
+        x_global  = x_global[numpy.any(alltruth, axis=1)]
+        x_cpf     = x_cpf[   numpy.any(alltruth, axis=1)]
+        x_npf     = x_npf[   numpy.any(alltruth, axis=1)]
+        x_sv      = x_sv[    numpy.any(alltruth, axis=1)]
+        alltruth  = alltruth[numpy.any(alltruth, axis=1)]
 
         newnsamp=x_global.shape[0]
-        #print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
+        print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
         self.nsamples = newnsamp
 
         self.w=[weights]
@@ -263,7 +289,7 @@ class TrainData_DiTau_glb_cpf_npf_sv_2cat(TrainData_DiTau_glb_cpf_npf_sv):
         TrainData_DiTau_glb_cpf_npf_sv.__init__(self)
         self.reducedtruthclasses=['isJet','isTauTau']
         self.reducedtruthmap = {
-            'isJet'   : ['isB','isLeptonicB','isLeptonicB_C','isBB','isGBB','isC','isCC','isGCC','isUD','isS','isG'],
+            'isJet'   : ['isB','isBB','isGBB','isC','isCC','isGCC','isUD','isS','isG'],
             'isTauTau': ['isTauHTauH','isTauHTauM','isTauHTauE'],
         }
         self.reducedreferenceclass='isTauTau'
@@ -303,7 +329,7 @@ class TrainData_DiTau_glb_cpf_npf_sv_4cat(TrainData_DiTau_glb_cpf_npf_sv):
         TrainData_DiTau_glb_cpf_npf_sv.__init__(self)
         self.reducedtruthclasses=['isB','isC','isLight','isTauTau']
         self.reducedtruthmap = {
-            'isB'     : ['isB','isLeptonicB','isLeptonicB_C','isBB','isGBB'],
+            'isB'     : ['isB','isBB','isGBB'],
             'isC'     : ['isC','isCC','isGCC'],
             'isLight' : ['isUD','isS','isG'],
             'isTauTau': ['isTauHTauH','isTauHTauM','isTauHTauE'],
