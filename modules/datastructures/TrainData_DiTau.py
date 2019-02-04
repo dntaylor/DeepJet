@@ -15,9 +15,9 @@ class TrainData_DiTau(TrainData):
         #define truth:
         self.treename = "deepntuplizerCA8/tree"
         self.undefTruth=['isUndefined']
-        self.truthclasses=['isB','isBB','isGBB',
+        self.truthclasses=['isB','isBB',#'isGBB',
                            #'isLeptonicB','isLeptonicB_C',
-                           'isC','isCC','isGCC',
+                           'isC','isCC',#'isGCC',
                            'isUD','isS','isG',
                            'isTauHTauH','isTauHTauM','isTauHTauE',
                            #'isTauMTauM','isTauMTauE','isTauETauE',
@@ -28,7 +28,8 @@ class TrainData_DiTau(TrainData):
         self.registerBranches(self.undefTruth)
 
         #self.referenceclass='isTauHTauH' # 'flatten' or class name
-        self.referenceclass='flatten'
+        #self.referenceclass='flatten'
+        self.referenceclass='lowest'
         self.weightbranchX='jet_pt'
         self.weightbranchY='jet_eta'
 
@@ -289,80 +290,20 @@ class TrainData_DiTau_glb_cpf_npf_sv_2cat(TrainData_DiTau_glb_cpf_npf_sv):
         TrainData_DiTau_glb_cpf_npf_sv.__init__(self)
         self.reducedtruthclasses=['isJet','isTauTau']
         self.reducedtruthmap = {
-            'isJet'   : ['isB','isBB','isGBB','isC','isCC','isGCC','isUD','isS','isG'],
+            'isJet'   : ['isB','isBB','isC','isCC','isUD','isS','isG'],
             'isTauTau': ['isTauHTauH','isTauHTauM','isTauHTauE'],
         }
         self.reducedreferenceclass='isTauTau'
-
-    ### categories to use for training     
-    #def reduceTruth(self, tuple_in):
-    #    import numpy
-    #    if tuple_in is not None:
-    #        b = tuple_in['isB'].view(numpy.ndarray)
-    #        bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
-    #        blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
-    #        allb = b+bl+blc
-
-    #        bb = tuple_in['isBB'].view(numpy.ndarray)
-    #        gbb = tuple_in['isGBB'].view(numpy.ndarray)
-
-    #        c = tuple_in['isC'].view(numpy.ndarray)
-    #        cc = tuple_in['isCC'].view(numpy.ndarray)
-    #        gcc = tuple_in['isGCC'].view(numpy.ndarray)
-
-    #        ud = tuple_in['isUD'].view(numpy.ndarray)
-    #        s = tuple_in['isS'].view(numpy.ndarray)
-    #        uds=ud+s
-    #        g = tuple_in['isG'].view(numpy.ndarray)
-    #        l = g + uds
-
-    #        h = tuple_in['isTauH'].view(numpy.ndarray)
-    #        hh = tuple_in['isTauHTauH'].view(numpy.ndarray)
-    #        hm = tuple_in['isTauHTauM'].view(numpy.ndarray)
-    #        he = tuple_in['isTauHTauE'].view(numpy.ndarray)
-
-    #        # b+c+l, tt
-    #        return numpy.vstack((allb+bb+gbb+c+cc+gcc+l,hh+hm+he)).transpose()
 
 class TrainData_DiTau_glb_cpf_npf_sv_4cat(TrainData_DiTau_glb_cpf_npf_sv):
     def __init__(self):
         TrainData_DiTau_glb_cpf_npf_sv.__init__(self)
         self.reducedtruthclasses=['isB','isC','isLight','isTauTau']
         self.reducedtruthmap = {
-            'isB'     : ['isB','isBB','isGBB'],
-            'isC'     : ['isC','isCC','isGCC'],
+            'isB'     : ['isB','isBB',],
+            'isC'     : ['isC','isCC',],
             'isLight' : ['isUD','isS','isG'],
             'isTauTau': ['isTauHTauH','isTauHTauM','isTauHTauE'],
         }
         self.reducedreferenceclass='isTauTau'
-
-    ### categories to use for training     
-    #def reduceTruth(self, tuple_in):
-    #    import numpy
-    #    if tuple_in is not None:
-    #        b = tuple_in['isB'].view(numpy.ndarray)
-    #        bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
-    #        blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
-    #        allb = b+bl+blc
-
-    #        bb = tuple_in['isBB'].view(numpy.ndarray)
-    #        gbb = tuple_in['isGBB'].view(numpy.ndarray)
-
-    #        c = tuple_in['isC'].view(numpy.ndarray)
-    #        cc = tuple_in['isCC'].view(numpy.ndarray)
-    #        gcc = tuple_in['isGCC'].view(numpy.ndarray)
-
-    #        ud = tuple_in['isUD'].view(numpy.ndarray)
-    #        s = tuple_in['isS'].view(numpy.ndarray)
-    #        uds=ud+s
-    #        g = tuple_in['isG'].view(numpy.ndarray)
-    #        l = g + uds
-
-    #        h = tuple_in['isTauH'].view(numpy.ndarray)
-    #        hh = tuple_in['isTauHTauH'].view(numpy.ndarray)
-    #        hm = tuple_in['isTauHTauM'].view(numpy.ndarray)
-    #        he = tuple_in['isTauHTauE'].view(numpy.ndarray)
-
-    #        # b, c, l, tt
-    #        return numpy.vstack((allb+bb+gbb,c+cc+gcc,l,hh+hm+he)).transpose()
 
