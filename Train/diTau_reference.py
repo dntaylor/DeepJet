@@ -29,11 +29,11 @@ if not train.modelSet():
 from keras.utils import plot_model
 plot_model(train.keras_model, to_file=train.outputDir+'model.eps')
 
-model, history = train.trainModel(nepochs=200,
+model, history = train.trainModel(nepochs=500,
                                   batchsize=10000,
-                                  stop_patience=300,
+                                  stop_patience=100,
                                   lr_factor=0.8,
-                                  lr_patience=-3,
+                                  lr_patience=10,
                                   lr_epsilon=0.0001,
                                   lr_cooldown=8,
                                   lr_minimum=0.000001,

@@ -28,8 +28,8 @@ class TrainData_DiTau(TrainData):
         self.registerBranches(self.undefTruth)
 
         #self.referenceclass='isTauHTauH' # 'flatten' or class name
-        #self.referenceclass='flatten'
-        self.referenceclass='lowest'
+        self.referenceclass='flatten'
+        #self.referenceclass='lowest'
         self.weightbranchX='jet_pt'
         self.weightbranchY='jet_eta'
 
@@ -255,12 +255,12 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
             alltruth  = alltruth[weights > 0]
             weights   = weights[ weights > 0]
 
-        weights   = weights[ numpy.any(alltruth, axis=1)]
-        x_global  = x_global[numpy.any(alltruth, axis=1)]
-        x_cpf     = x_cpf[   numpy.any(alltruth, axis=1)]
-        x_npf     = x_npf[   numpy.any(alltruth, axis=1)]
-        x_sv      = x_sv[    numpy.any(alltruth, axis=1)]
-        alltruth  = alltruth[numpy.any(alltruth, axis=1)]
+        #weights   = weights[ numpy.any(alltruth, axis=1)]
+        #x_global  = x_global[numpy.any(alltruth, axis=1)]
+        #x_cpf     = x_cpf[   numpy.any(alltruth, axis=1)]
+        #x_npf     = x_npf[   numpy.any(alltruth, axis=1)]
+        #x_sv      = x_sv[    numpy.any(alltruth, axis=1)]
+        #alltruth  = alltruth[numpy.any(alltruth, axis=1)]
 
         newnsamp=x_global.shape[0]
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')

@@ -35,7 +35,11 @@ def model_diTauReference(inputs, num_classes, num_regclasses, datasets = ['globa
     concat = Concatenate()(flattenLayers)
 
     dense = Dense(200, activation='relu',name='dense_1',kernel_initializer=kernel_initializer_fc,trainable=True)(concat)
-    dropout = Dropout(rate=0.1, name='dense_dropout')(dense)
+    dropout = Dropout(rate=0.1, name='dense_dropout_1')(dense)
+    dense = Dense(100, activation='relu',name='dense_2',kernel_initializer=kernel_initializer_fc,trainable=True)(dropout)
+    dropout = Dropout(rate=0.1, name='dense_dropout_2')(dense)
+    dense = Dense(100, activation='relu',name='dense_3',kernel_initializer=kernel_initializer_fc,trainable=True)(dropout)
+    dropout = Dropout(rate=0.1, name='dense_dropout_3')(dense)
 
     output = Dense(num_classes, activation='softmax', name='ID_pred', kernel_initializer=kernel_initializer_fc)(dropout)
 
