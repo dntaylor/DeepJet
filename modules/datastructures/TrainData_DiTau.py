@@ -27,11 +27,12 @@ class TrainData_DiTau(TrainData):
         self.registerBranches(self.truthclasses)
         self.registerBranches(self.undefTruth)
 
-        #self.referenceclass='isTauHTauH' # 'flatten' or class name
-        self.referenceclass='flatten'
+        self.referenceclass='isTauHTauH' # 'flatten' or class name
+        #self.referenceclass='flatten'
         #self.referenceclass='lowest'
         self.weightbranchX='jet_pt'
         self.weightbranchY='jet_eta'
+        #self.weightbranchY='jet_mass'
 
         self.registerBranches([self.weightbranchX,self.weightbranchY])
 
@@ -44,6 +45,12 @@ class TrainData_DiTau(TrainData):
             [-2.5,-2.,-1.5,-1.,-0.5,0.5,1,1.5,2.,2.5],
             dtype=float
             )
+
+        #self.weight_binY = numpy.array([
+        #        10,30,40,50,75,100,
+        #        125,150,175,200,250,300,400,500,
+        #        600,800,1000,1500,2000],dtype=float)
+
 
         self.weight=True
         self.remove=False
@@ -231,13 +238,13 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
                         weights[i] = weights[i]*1./len(self.reducedtruthmap[truth])
 
         # pt cut
-        pt = Tuple['jet_pt']
-        weights   = weights[ pt > 30]
-        x_global  = x_global[pt > 30]
-        x_cpf     = x_cpf[   pt > 30]
-        x_npf     = x_npf[   pt > 30]
-        x_sv      = x_sv[    pt > 30]
-        alltruth  = alltruth[pt > 30]
+        #pt = Tuple['jet_pt']
+        #weights   = weights[ pt > 30]
+        #x_global  = x_global[pt > 30]
+        #x_cpf     = x_cpf[   pt > 30]
+        #x_npf     = x_npf[   pt > 30]
+        #x_sv      = x_sv[    pt > 30]
+        #alltruth  = alltruth[pt > 30]
 
         if self.remove:
             weights   = weights[ notremoves > 0]

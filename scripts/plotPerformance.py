@@ -3,6 +3,10 @@ import sys
 import operator
 import pickle
 import argparse
+import itertools
+import numpy as np
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
 
 import ROOT
 
@@ -22,6 +26,33 @@ def parse_command_line(argv):
     parser.add_argument('predictionDir', type=str)
 
     return parser.parse_args(argv)
+
+def plot_confusion_matrix(y_test, y_pred, classes,
+                          normalize=False,
+                          title='Confusion matrix',
+                          cmap=plt.cm.Blues):
+    cm = confusion_matrix(y_test, y_pred)
+    np.set_printoptions(precision=2)
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+
+    fmt = '.2f' if normalize else 'd'
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, format(cm[i, j], fmt),
+                 horizontalalignment="center",
+                 color="white" if cm[i, j] > thresh else "black")
+
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.tight_layout()
 
 
 def main(argv=None):
@@ -44,6 +75,7 @@ def main(argv=None):
     treeBaseName = dcData[6].treename
     truthMap = dcData[6].reducedtruthmap
     truthOrder = dcData[6].reducedtruthclasses
+    n = len(truthMap)
     
     tfileMapFile = '{}/tree_association.txt'.format(args.predictionDir)
     tfileMap = {}
@@ -66,7 +98,8 @@ def main(argv=None):
     
     truthPredCount = {t: {p: 0 for p in truthMap} for t in truthMap}
     truthCount = {t:0 for t in truthMap}
-    
+    truthArray = None
+    predArray = None
     for tb,tree in treeBases.iteritems():
         for row in tree:
             probs = {t: getattr(row,'prob_{}'.format(t)) for t in truthMap}
@@ -75,43 +108,42 @@ def main(argv=None):
             truth = max(truths.iteritems(), key=operator.itemgetter(1))[0]
             truthPredCount[truth][pred] += 1
             truthCount[truth] += 1
+            tarray = np.zeros(n)[:,np.newaxis]
+            tarray[truthOrder.index(truth)] = 1
+            parray = np.array([probs[t] for t in truthOrder])[:,np.newaxis]
+            if truthArray is not None:
+                truthArray = np.concatenate([truthArray,tarray],axis=1)
+                predArray  = np.concatenate([predArray, parray],axis=1)
+            else:
+                truthArray = tarray
+                predArray  = parray
     
+    truthArray = truthArray.T
+    predArray = predArray.T
     
     labels = {
-        'isJet'     : 'jet',
-        'isLight'   : 'udsg',
-        'isB'       : 'b'
-        'isC'       : 'c'
-        'isTauTau'  : '#tau#tau',
-        'isTauHTauH': '#tau_{h}#tau_{h}',
-        'isTauHTauM': '#tau_{#mu}#tau_{h}',
-        'isTauHTauE': '#tau_{e}#tau_{h}',
-        'isTau'     : '#tau',
-        'isTauH'    : '#tau_{h}',
-        'isTauM'    : '#tau_{#mu}',
-        'isTauE'    : '#tau_{e}',
+        'isJet'     : r'jet',
+        'isLight'   : r'udsg',
+        'isB'       : r'b',
+        'isC'       : r'c',
+        'isTauTau'  : r'$\tau\tau$',
+        'isTauHTauH': r'$\tau_{h}#tau_{h}$',
+        'isTauHTauM': r'$\tau_{\mu}\tau_{h}$',
+        'isTauHTauE': r'$\tau_{e}\tau_{h}$',
+        'isTau'     : r'$\tau$',
+        'isTauH'    : r'$\tau_{h}$',
+        'isTauM'    : r'$\tau_{\mu}$',
+        'isTauE'    : r'$\tau_{e}$',
     }
     
-    n = len(truthMap)
-    hist = ROOT.TH2D('confusion','confusion',n,-0.5,n-0.5,n,-0.5,n-0.5)
-    for t in range(n):
-        for p in range(n):
-            truth = truthOrder[t]
-            pred = truthOrder[p]
-            hist.SetBinContent(hist.FindBin(t,p),float(truthPredCount[truth][pred])/truthCount[truth]*100)
-    
-    canvas = ROOT.TCanvas('c','c',50,50,650,600)
-    canvas.SetRightMargin(0.18)
-    
-    hist.Draw('colz text')
-    for b, label in enumerate(truthOrder):
-        hist.GetXaxis().SetBinLabel(b+1,labels[label])
-        hist.GetYaxis().SetBinLabel(b+1,labels[label])
-    hist.GetXaxis().SetTitle('Truth')
-    hist.GetYaxis().SetTitle('Prediction')
-    hist.GetZaxis().SetTitle('% Predicted')
-    hist.GetZaxis().SetRangeUser(0,100)
-    canvas.Print('{}/confusion.png'.format(args.predictionDir))
+    f = plt.figure()
+    plot_confusion_matrix(
+        truthArray.argmax(axis=1),
+        predArray.argmax(axis=1),
+        [labels[t] for t in truthOrder],
+        normalize=True,
+    )
+    f.savefig('{}/confusion.png'.format(args.predictionDir))
 
     return 0
 
