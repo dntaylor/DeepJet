@@ -14,7 +14,7 @@ k.tensorflow_backend.set_session(tf.Session(config=config))
 
 
 
-train=training_base(testrun=False,renewtokens=False)
+train=training_base(testrun=False,renewtokens=False,useweights=True)
 
 if not train.modelSet():
     from models import model_diTauReference as trainingModel
