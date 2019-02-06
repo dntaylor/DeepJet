@@ -127,7 +127,7 @@ def main(argv=None):
         'isB'       : r'b',
         'isC'       : r'c',
         'isTauTau'  : r'$\tau\tau$',
-        'isTauHTauH': r'$\tau_{h}#tau_{h}$',
+        'isTauHTauH': r'$\tau_{h}\tau_{h}$',
         'isTauHTauM': r'$\tau_{\mu}\tau_{h}$',
         'isTauHTauE': r'$\tau_{e}\tau_{h}$',
         'isTau'     : r'$\tau$',
