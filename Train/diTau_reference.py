@@ -9,7 +9,7 @@ from keras import backend as k
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-config.gpu_options.per_process_gpu_memory_fraction = 1.
+config.gpu_options.per_process_gpu_memory_fraction = 0.5
 k.tensorflow_backend.set_session(tf.Session(config=config))
 
 

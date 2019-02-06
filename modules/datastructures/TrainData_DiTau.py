@@ -284,6 +284,17 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
                 return numpy.vstack(truths).transpose()
 
 
+class TrainData_DiTau_glb_cpf_npf_sv_3cat_signal(TrainData_DiTau_glb_cpf_npf_sv):
+    def __init__(self):
+        TrainData_DiTau_glb_cpf_npf_sv.__init__(self)
+        self.reducedtruthclasses=['isTauHTauH','isTauHTauM','isTauHTauE']
+        self.reducedtruthmap = {
+            'isTauHTauH': ['isTauHTauH'],
+            'isTauHTauM': ['isTauHTauM'],
+            'isTauHTauE': ['isTauHTauE'],
+        }
+        self.reducedreferenceclass='isTauHTauH'
+
 
 class TrainData_DiTau_glb_cpf_npf_sv_2cat(TrainData_DiTau_glb_cpf_npf_sv):
     def __init__(self):
