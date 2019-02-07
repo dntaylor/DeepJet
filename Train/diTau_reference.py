@@ -21,23 +21,26 @@ if not train.modelSet():
 
     train.setModel(trainingModel)
     
-    train.compileModel(learningrate=0.001,
+    train.compileModel(learningrate=0.00001,
                        loss=['categorical_crossentropy'],
                        metrics=['accuracy'],
-                       loss_weights=[1.])
+                       loss_weights=[1.],
+                       )
+
+print(train.keras_model.summary())
 
 from keras.utils import plot_model
 plot_model(train.keras_model, to_file=train.outputDir+'model.eps')
 
 model, history = train.trainModel(nepochs=500,
-                                  batchsize=10000,
+                                  batchsize=5000,
                                   stop_patience=100,
                                   lr_factor=0.8,
                                   lr_patience=10,
                                   lr_epsilon=0.0001,
                                   lr_cooldown=8,
-                                  lr_minimum=0.000001,
-                                  maxqsize=5,
+                                  lr_minimum=0.00000001,
+                                  maxqsize=10,
                                   verbose=1,
                                   )
 

@@ -273,6 +273,9 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
         print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
         self.nsamples = newnsamp
 
+        if weights.ndim>1:
+            weights = weights.reshape(weights.shape[0])
+
         self.w=[weights]
         self.x=[x_global,x_cpf,x_npf,x_sv]
         self.y=[alltruth]
