@@ -14,23 +14,35 @@ k.tensorflow_backend.set_session(tf.Session(config=config))
 
 
 
-train=training_base(testrun=False,renewtokens=False,useweights=True)
+#train=training_base(testrun=False,renewtokens=False,useweights=True)
+train=training_base(testrun=False,renewtokens=False,useweights=False)
 
 if not train.modelSet():
-    from models import model_diTauReference as trainingModel
+    #from models import model_diTauReference as trainingModel
+    from models import model_diTauDense as trainingModel
 
-    train.setModel(trainingModel)
+    datasets = ['global','cpf','npf','sv']
+    #datasets = ['global']
+
+    train.setModel(trainingModel,datasets=datasets,dropoutRate=0.0,momentum=0.6,batchnorm=True)
     
-    train.compileModel(learningrate=0.00001,
+    train.compileModel(learningrate=0.001,
                        loss=['categorical_crossentropy'],
                        metrics=['accuracy'],
                        loss_weights=[1.],
                        )
 
-print(train.keras_model.summary())
+    #train.train_data.maxFilesOpen = 1
+    #train.val_data.maxFilesOpen = 1
+    
+    with open(train.outputDir + 'summary.txt','w') as f:
+        train.keras_model.summary(print_fn=lambda x: f.write(x + '\n'))
+    
+    from keras.utils import plot_model
+    plot_model(train.keras_model, to_file=train.outputDir+'model.eps')
 
-from keras.utils import plot_model
-plot_model(train.keras_model, to_file=train.outputDir+'model.eps')
+
+print(train.keras_model.summary())
 
 model, history = train.trainModel(nepochs=500,
                                   batchsize=5000,
