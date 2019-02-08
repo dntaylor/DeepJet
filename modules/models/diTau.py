@@ -4,9 +4,9 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.merge import Add, Multiply
 from buildingBlocks import block_deepFlavourConvolutions, block_deepFlavourDense, block_SchwartzImage, block_deepFlavourBTVConvolutions
 
-#############
-### DiTau ###
-#############
+##############
+### blocks ###
+##############
 def block_convolution(x,label,dropoutRate=0.1,active=True,batchnorm=False,batchmomentum=0.6,pattern=[64,32,32,8]):
     '''
     deep Flavour convolution part.
@@ -23,7 +23,22 @@ def block_convolution(x,label,dropoutRate=0.1,active=True,batchnorm=False,batchm
 
     return x
 
-def model_diTauReference(inputs, num_classes, num_regclasses, datasets = ['global','cpf','npf','sv'], removedVars = None, multi_gpu=1, dropoutRate=0.1, momentum=0.6, batchnorm=True, **kwargs):
+def block_dense(x,dropoutRate,depth=8,width=100,active=True,batchnorm=False,batchmomentum=0.6):
+    if active:
+        for i in range(depth):
+            x=  Dense(width, activation='relu',kernel_initializer='lecun_uniform', name='df_dense{}'.format(i))(x)
+            if batchnorm:
+                x = BatchNormalization(momentum=batchmomentum,name='df_dense_batchnorm{}'.format(i))(x)
+            x = Dropout(dropoutRate,name='df_dense_dropout{}'.format(i))(x)
+    else:
+        x= Dense(1,kernel_initializer='zeros',trainable=False,name='df_dense_off')(x)
+
+    return x
+
+##############
+### models ###
+##############
+def model_diTauReference(inputs, num_classes, num_regclasses, datasets = ['global','cpf','npf','sv'], removedVars = None, multi_gpu=1, dropoutRate=0.1, momentum=0.6, batchnorm=True, depth=8, width=100, **kwargs):
     kernel_initializer = 'he_normal'
     kernel_initializer_fc = 'lecun_uniform'
 
@@ -43,7 +58,7 @@ def model_diTauReference(inputs, num_classes, num_regclasses, datasets = ['globa
 
     x = Concatenate()(flatten)
     
-    x = block_deepFlavourDense(x,dropoutRate,active=True,batchnorm=batchnorm,batchmomentum=momentum)
+    x = block_dense(x,dropoutRate,depth=depth,width=width,active=True,batchnorm=batchnorm,batchmomentum=momentum)
     
     output = Dense(num_classes, activation='softmax',kernel_initializer='lecun_uniform',name='ID_pred')(x)
 
@@ -54,7 +69,7 @@ def model_diTauReference(inputs, num_classes, num_regclasses, datasets = ['globa
 
     return model
 
-def model_diTauDense(inputs, num_classes, num_regclasses, datasets = ['global'], removedVars = None, multi_gpu=1, dropoutRate=0.1, momentum=0.6, batchnorm=True, **kwargs):
+def model_diTauDense(inputs, num_classes, num_regclasses, datasets = ['global'], removedVars = None, multi_gpu=1, dropoutRate=0.1, momentum=0.6, batchnorm=True, depth=8, width=100, **kwargs):
     kernel_initializer = 'he_normal'
     kernel_initializer_fc = 'lecun_uniform'
 
@@ -72,7 +87,7 @@ def model_diTauDense(inputs, num_classes, num_regclasses, datasets = ['global'],
     else:
         x = xs[0]
      
-    x = block_deepFlavourDense(x,dropoutRate,active=True,batchnorm=batchnorm,batchmomentum=momentum)
+    x = block_dense(x,dropoutRate,depth=depth,width=width,active=True,batchnorm=batchnorm,batchmomentum=momentum)
     
     output = Dense(num_classes, activation='softmax',kernel_initializer='lecun_uniform',name='ID_pred')(x)
 

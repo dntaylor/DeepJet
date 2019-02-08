@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import sys
 import operator
@@ -61,6 +62,9 @@ def main(argv=None):
 
     args = parse_command_line(argv)
 
+    print('This currently runs as part of predict step, will do nothing')
+    return 0
+
     # dcData[6] holds the TrainData class
     dcData = []
     with open(args.dataCollection,'rb') as f:
@@ -104,6 +108,7 @@ def main(argv=None):
         for row in tree:
             probs = {t: getattr(row,'prob_{}'.format(t)) for t in truthMap}
             truths = {t: any([getattr(row,x) for x in truthMap[t]]) for t in truthMap}
+            if not any(truths.keys()): continue
             pred = max(probs.iteritems(), key=operator.itemgetter(1))[0]
             truth = max(truths.iteritems(), key=operator.itemgetter(1))[0]
             truthPredCount[truth][pred] += 1

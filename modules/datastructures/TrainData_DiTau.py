@@ -56,7 +56,150 @@ class TrainData_DiTau(TrainData):
 
         self.weight=False
         self.remove=True
+
+    def reduceTruth(self,tuple_in):
+        if tuple_in is not None:
+            if hasattr(self,'reducedtruthmap'):
+                truths = []
+                for truth in self.reducedtruthclasses:
+                    ts = [tuple_in[t] for t in self.reducedtruthmap[truth]]
+                    truths.append(ts[0])
+                    for t in ts[1:]:
+                        truths[-1] = truths[-1]+t
+                return np.vstack(truths).transpose()
+
     
+class TrainData_DiTau_truth(TrainData_DiTau):
+    
+    def __init__(self):
+        TrainData_DiTau.__init__(self)
+
+        self.truthclasses=['isB','isBB',#'isGBB',
+                           #'isLeptonicB','isLeptonicB_C',
+                           'isC','isCC',#'isGCC',
+                           'isUD','isS','isG',
+                           'isTauHTauH','isTauHTauM','isTauHTauE',
+                           #'isTauMTauM','isTauMTauE','isTauETauE',
+                           #'isTauH','isTauM','isTauE',
+                           ]
+        
+        self.addBranches([#'jet_pt', 
+                          #'jet_eta',
+                          ] + self.truthclasses)
+
+
+        #self.addBranches(['jet_corr_pt'])
+
+        #self.registerBranches(['gen_pt_WithNu'])
+
+        #self.regressiontargetclasses=['uncPt','Pt']
+
+        self.reducedtruthclasses=['isB','isC','isLight','isTauTau']
+        self.reducedtruthmap = {
+            'isB'     : ['isB','isBB',],
+            'isC'     : ['isC','isCC',],
+            'isLight' : ['isUD','isS','isG'],
+            'isTauTau': ['isTauHTauH','isTauHTauM','isTauHTauE'],
+        }
+        self.reducedreferenceclass='isB'
+        self.referenceclass='isB'
+
+
+        
+    #this function describes how the branches are converted
+    def readFromRootFile(self,filename,TupleMeanStd, weighter):
+        
+        from DeepJetCore.preprocessing import MeanNormApply, MeanNormZeroPad, MeanNormZeroPadParticles
+        import ROOT
+        
+        fileTimeOut(filename, 60) #give eos 1 minutes to recover
+        rfile = ROOT.TFile(filename)
+        tree = rfile.Get(self.treename)
+        self.nsamples=tree.GetEntries()
+        
+        Tuple = self.readTreeFromRootToTuple(filename)
+
+        undef=Tuple['isUndefined']
+        if self.remove:
+            notremoves=weighter.createNotRemoveIndices(Tuple)
+            notremoves -= undef
+            
+
+        if self.weight:
+            weights=weighter.getJetWeights(Tuple)
+        elif self.remove:
+            weights=notremoves
+        else:
+            weights=np.empty(self.nsamples)
+            weights.fill(1.)
+
+        truthtuple = Tuple[self.truthclasses]
+        alltruth = self.reduceTruth(truthtuple)
+
+        # scale down by number of classes in a reduced class
+        if self.weight:
+            if hasattr(self,'reducedtruthmap'):
+                for i,row in enumerate(iter(alltruth)):
+                    for t,truth in enumerate(self.reducedtruthclasses):
+                        if row[t]==1:
+                            weights[i] = weights[i]*1./len(self.reducedtruthmap[truth])
+
+        # remove jets to have the same counts
+        if self.remove:
+            if hasattr(self,'reducedtruthmap'):
+                total = []
+                for rt in self.reducedtruthclasses:
+                    total += [sum([weighter.totalcounts[t] for t,truth in enumerate(self.truthclasses) if truth in self.reducedtruthmap[rt]])]
+                lowest = min(total)
+                for i,row in enumerate(iter(alltruth)):
+                    for t,truth in enumerate(self.reducedtruthclasses):
+                        if not row[t]: continue
+                        keep = float(lowest)/total[t]
+                        rand = np.random.ranf()
+                        if rand>keep:
+                            notremoves[i]=0
+                    
+            else:
+                total = weighter.totalcounts
+                lowest = min(total)
+                for i,row in enumerate(iter(truthtuple)):
+                    for t,truth in enumerate(self.truthclasses):
+                        if not row[t]: continue
+                        keep = float(lowest)/total[t]
+                        rand = np.random.ranf()
+                        if rand>keep:
+                            notremoves[i]=0
+                    
+        x = [truthtuple[truth] for truth in self.truthclasses]
+        x = np.vstack(x).transpose()
+
+        if self.remove:
+            weights   = weights[ notremoves > 0]
+            x         = x[ notremoves > 0]
+            alltruth  = alltruth[notremoves > 0]
+
+        if self.weight:
+            alltruth  = alltruth[weights > 0]
+            x         = x[weights > 0]
+            weights   = weights[ weights > 0]
+
+        # remove samples with no predicted class
+        skip = np.all(alltruth==0, axis=1)
+        alltruth = alltruth[~skip]
+        x        = x[~skip]
+        weights  = weights[~skip]
+
+        newnsamp=alltruth.shape[0]
+        logging.info('reduced content to {}%'.format(int(float(newnsamp)/float(self.nsamples)*100)))
+        self.nsamples = newnsamp
+
+        if weights.ndim>1:
+            weights = weights.reshape(weights.shape[0])
+
+        self.w=[weights]
+        self.x=[x]
+        self.y=[alltruth]
+
         
 class TrainData_DiTau_glb(TrainData_DiTau):
     
@@ -190,9 +333,11 @@ class TrainData_DiTau_glb(TrainData_DiTau):
             alltruth  = alltruth[weights > 0]
             weights   = weights[ weights > 0]
 
-        #weights   = weights[ np.any(alltruth, axis=1)]
-        #x_global  = x_global[np.any(alltruth, axis=1)]
-        #alltruth  = alltruth[np.any(alltruth, axis=1)]
+        # remove samples with no predicted class
+        skip = np.all(alltruth==0, axis=1)
+        alltruth = alltruth[~skip]
+        x_global = x_global[~skip]
+        weights  = weights[~skip]
 
         newnsamp=x_global.shape[0]
         logging.info('reduced content to {}%'.format(int(float(newnsamp)/float(self.nsamples)*100)))
@@ -206,16 +351,6 @@ class TrainData_DiTau_glb(TrainData_DiTau):
         self.y=[alltruth]
 
 
-    def reduceTruth(self,tuple_in):
-        if tuple_in is not None:
-            if hasattr(self,'reducedtruthmap'):
-                truths = []
-                for truth in self.reducedtruthclasses:
-                    ts = [tuple_in[t] for t in self.reducedtruthmap[truth]]
-                    truths.append(ts[0])
-                    for t in ts[1:]:
-                        truths[-1] = truths[-1]+t
-                return np.vstack(truths).transpose()
 
 class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
     
@@ -424,12 +559,14 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
             alltruth  = alltruth[weights > 0]
             weights   = weights[ weights > 0]
 
-        #weights   = weights[ np.any(alltruth, axis=1)]
-        #x_global  = x_global[np.any(alltruth, axis=1)]
-        #x_cpf     = x_cpf[   np.any(alltruth, axis=1)]
-        #x_npf     = x_npf[   np.any(alltruth, axis=1)]
-        #x_sv      = x_sv[    np.any(alltruth, axis=1)]
-        #alltruth  = alltruth[np.any(alltruth, axis=1)]
+        # remove samples with no predicted class
+        skip = np.all(alltruth==0, axis=1)
+        alltruth = alltruth[~skip]
+        x_global = x_global[~skip]
+        x_cpf    = x_cpf[~skip]
+        x_npf    = x_npf[~skip]
+        x_sv     = x_sv[~skip]
+        weights  = weights[~skip]
 
         newnsamp=x_global.shape[0]
         logging.info('reduced content to {}%'.format(int(float(newnsamp)/float(self.nsamples)*100)))
@@ -442,17 +579,6 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
         self.x=[x_global,x_cpf,x_npf,x_sv]
         self.y=[alltruth]
 
-
-    def reduceTruth(self,tuple_in):
-        if tuple_in is not None:
-            if hasattr(self,'reducedtruthmap'):
-                truths = []
-                for truth in self.reducedtruthclasses:
-                    ts = [tuple_in[t] for t in self.reducedtruthmap[truth]]
-                    truths.append(ts[0])
-                    for t in ts[1:]:
-                        truths[-1] = truths[-1]+t
-                return np.vstack(truths).transpose()
 
 class TrainData_DiTau_glb_3cat_signal(TrainData_DiTau_glb):
     def __init__(self):

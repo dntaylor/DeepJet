@@ -21,10 +21,10 @@ if not train.modelSet():
     #from models import model_diTauReference as trainingModel
     from models import model_diTauDense as trainingModel
 
-    datasets = ['global','cpf','npf','sv']
-    #datasets = ['global']
+    #datasets = ['global','cpf','npf','sv']
+    datasets = ['global']
 
-    train.setModel(trainingModel,datasets=datasets,dropoutRate=0.0,momentum=0.6,batchnorm=True)
+    train.setModel(trainingModel,datasets=datasets,dropoutRate=0.1,momentum=0.6,batchnorm=False,depth=2,width=200)
     
     train.compileModel(learningrate=0.001,
                        loss=['categorical_crossentropy'],
