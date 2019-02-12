@@ -38,22 +38,22 @@ def block_dense(x,dropoutRate,depth=8,width=100,active=True,batchnorm=False,batc
 ##############
 ### models ###
 ##############
-def model_diTauReference(inputs, num_classes, num_regclasses, datasets = ['global','cpf','npf','sv'], removedVars = None, multi_gpu=1, dropoutRate=0.1, momentum=0.6, batchnorm=True, depth=8, width=100, **kwargs):
+def model_diTauReference(inputs, num_classes, num_regclasses, datasets = ['global','cpf','npf','sv'], removedVars = None, multi_gpu=1, dropoutRate=0.1, momentum=0.9, batchnorm=True, depth=8, width=100, pattern=[64,32,32,8], **kwargs):
     kernel_initializer = 'he_normal'
     kernel_initializer_fc = 'lecun_uniform'
 
-    if batchnorm:
-        xs = [BatchNormalization(momentum=momentum, name='{}_input_batchnorm'.format(datasets[i]))(inputs[i]) for i in range(len(inputs))]
-    else:
-        xs = inputs
+    #if batchnorm:
+    #    xs = [BatchNormalization(momentum=momentum, name='{}_input_batchnorm'.format(datasets[i]))(inputs[i]) for i in range(len(inputs))]
+    #else:
+    xs = inputs
 
     flatten = [xs[0]]
     for i in range(1,len(datasets)):
-        x = block_convolution(xs[i],datasets[i],dropoutRate=dropoutRate,batchnorm=batchnorm,batmomentum=momenutm)
+        x = block_convolution(xs[i],datasets[i],dropoutRate=dropoutRate,batchnorm=batchnorm,batchmomentum=momentum,pattern=pattern)
         x = LSTM(150,go_backwards=True,implementation=2, name='{}_lstm'.format(datasets[i]))(x)
         if batchnorm:
-            x = BatchNormalization(momentum=momentum,name='{}_lstm_batchnorm')(x)
-        x = Dropout(dropoutRate,name='{}_lstm_dropout'.format(label))(x)
+            x = BatchNormalization(momentum=momentum,name='{}_lstm_batchnorm'.format(datasets[i]))(x)
+        x = Dropout(dropoutRate,name='{}_lstm_dropout'.format(datasets[i]))(x)
         flatten += [x]
 
     x = Concatenate()(flatten)
@@ -69,14 +69,14 @@ def model_diTauReference(inputs, num_classes, num_regclasses, datasets = ['globa
 
     return model
 
-def model_diTauDense(inputs, num_classes, num_regclasses, datasets = ['global'], removedVars = None, multi_gpu=1, dropoutRate=0.1, momentum=0.6, batchnorm=True, depth=8, width=100, **kwargs):
+def model_diTauDense(inputs, num_classes, num_regclasses, datasets = ['global'], removedVars = None, multi_gpu=1, dropoutRate=0.1, momentum=0.9, batchnorm=True, depth=8, width=100, **kwargs):
     kernel_initializer = 'he_normal'
     kernel_initializer_fc = 'lecun_uniform'
 
-    if batchnorm:
-        xs = [BatchNormalization(momentum=momentum, name='{}_input_batchnorm'.format(datasets[i]))(inputs[i]) for i in range(len(inputs))]
-    else:
-        xs = inputs
+    #if batchnorm:
+    #    xs = [BatchNormalization(momentum=momentum, name='{}_input_batchnorm'.format(datasets[i]))(inputs[i]) for i in range(len(inputs))]
+    #else:
+    xs = inputs
 
     if len(xs)>1:
         flatten = [xs[0]]

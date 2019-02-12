@@ -6,8 +6,14 @@ import pickle
 import argparse
 import itertools
 import numpy as np
+
+import matplotlib as mpl
+mpl.use('Agg')
+
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
+
+from DeepJetCore.evaluation import makeROCs_async
 
 import ROOT
 
@@ -56,15 +62,7 @@ def plot_confusion_matrix(y_test, y_pred, classes,
     plt.tight_layout()
 
 
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv[1:]
-
-    args = parse_command_line(argv)
-
-    print('This currently runs as part of predict step, will do nothing')
-    return 0
-
+def do_confusion(args):
     # dcData[6] holds the TrainData class
     dcData = []
     with open(args.dataCollection,'rb') as f:
@@ -149,6 +147,64 @@ def main(argv=None):
         normalize=True,
     )
     f.savefig('{}/confusion.png'.format(args.predictionDir))
+
+
+def do_rocs(args):
+
+    dcData = []
+    with open(args.dataCollection,'rb') as f:
+        while True:
+            try:
+                o = pickle.load(f)
+            except:
+                break
+            dcData += [o]
+    
+    treePredName = 'tree'
+    treeBaseName = dcData[6].treename
+    truthMap = dcData[6].reducedtruthmap
+    truthOrder = dcData[6].reducedtruthclasses
+    n = len(truthMap)
+    
+    tfileMapFile = '{}/tree_association.txt'.format(args.predictionDir)
+
+
+    for x in truthOrder:
+        sig_bg = [(x,y) for y in truthOrder if x!=y]
+        names = ['{} vs {}'.format(x,y) for x,y in sig_bg]
+        probs = ['prob_{}'.format(x) for x,y in sig_bg]
+        truths = [x for x,y in sig_bg]
+        vetos = [y for x,y in sig_bg]
+
+
+        makeROCs_async(tfileMapFile,
+                       name_list=names,
+                       probabilities_list=probs,
+                       truths_list=truths,
+                       vetos_list=vetos,
+                       colors_list='auto',
+                       outpdffile='ROC_{}.pdf'.format(x),
+                       cuts='jet_pt>30',
+                       cmsstyle=False,
+                       firstcomment='',
+                       secondcomment='',
+                       invalidlist='',
+                       extralegend=None,
+                       logY=True,
+                       individual=False,
+                       xaxis="efficiency",
+                       nbins=200,
+                       treename=treeBaseName)
+
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+
+    args = parse_command_line(argv)
+
+    #print('This currently runs as part of predict step, will do nothing')
+    #do_confusion(args)
+    do_rocs(args)
 
     return 0
 

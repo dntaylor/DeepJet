@@ -14,19 +14,27 @@ k.tensorflow_backend.set_session(tf.Session(config=config))
 
 
 
-#train=training_base(testrun=False,renewtokens=False,useweights=True)
-train=training_base(testrun=False,renewtokens=False,useweights=False)
+#train=training_base(testrun=False,renewtokens=True,useAFS=False,useweights=True)
+train=training_base(testrun=False,renewtokens=True,useAFS=False,useweights=False)
 
 if not train.modelSet():
-    #from models import model_diTauReference as trainingModel
-    from models import model_diTauDense as trainingModel
+    from models import model_diTauReference as trainingModel
+    #from models import model_diTauDense as trainingModel
 
-    #datasets = ['global','cpf','npf','sv']
-    datasets = ['global']
+    datasets = ['global','cpf','npf','sv']
+    #datasets = ['global']
 
-    train.setModel(trainingModel,datasets=datasets,dropoutRate=0.1,momentum=0.6,batchnorm=False,depth=2,width=200)
+    train.setModel(trainingModel,
+                   datasets=datasets,
+                   dropoutRate=0.1,
+                   momentum=0.9,
+                   batchnorm=True,
+                   depth=4,
+                   width=200,
+                   pattern=[32,32],
+                   )
     
-    train.compileModel(learningrate=0.001,
+    train.compileModel(learningrate=0.0001,
                        loss=['categorical_crossentropy'],
                        metrics=['accuracy'],
                        loss_weights=[1.],
