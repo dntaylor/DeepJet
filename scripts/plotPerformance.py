@@ -10,14 +10,15 @@ import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
 
+import ROOT
+ROOT.PyConfig.IgnoreCommandLineOptions = True
+ROOT.gROOT.SetBatch(True)
+
+
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 
 from DeepJetCore.evaluation import makeROCs_async
-
-import ROOT
-
-ROOT.gROOT.SetBatch()
 
 import tdrstyle
 tdrstyle.setTDRStyle()

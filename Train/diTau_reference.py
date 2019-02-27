@@ -28,7 +28,7 @@ if not train.modelSet():
                    datasets=datasets,
                    dropoutRate=0.1,
                    momentum=0.9,
-                   batchnorm=True,
+                   batchnorm=False,
                    depth=4,
                    width=200,
                    pattern=[32,32],

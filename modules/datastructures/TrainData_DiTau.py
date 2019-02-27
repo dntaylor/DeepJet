@@ -8,10 +8,6 @@ import numpy as np
 class TrainData_DiTau(TrainData):
     
     def __init__(self):
-        '''
-        This class is meant as a base class for the FatJet studies
-        You will not need to edit it for trying out things
-        '''
         TrainData.__init__(self)
         
         #define truth:
@@ -66,7 +62,13 @@ class TrainData_DiTau(TrainData):
                     truths.append(ts[0])
                     for t in ts[1:]:
                         truths[-1] = truths[-1]+t
-                return np.vstack(truths).transpose()
+                result = np.vstack(truths).transpose()
+                print(tuple_in.shape)
+                print({truth: np.sum(tuple_in[truth]) for truth in self.truthclasses})
+                print(self.reducedtruthclasses)
+                print(np.sum(result,axis=0))
+                return result
+                
 
     
 class TrainData_DiTau_truth(TrainData_DiTau):
@@ -74,11 +76,11 @@ class TrainData_DiTau_truth(TrainData_DiTau):
     def __init__(self):
         TrainData_DiTau.__init__(self)
 
-        self.truthclasses=['isB','isBB',#'isGBB',
+        self.truthclasses=['isB',#'isBB',#'isGBB',
                            #'isLeptonicB','isLeptonicB_C',
-                           'isC','isCC',#'isGCC',
+                           'isC',#'isCC',#'isGCC',
                            'isUD','isS','isG',
-                           'isTauHTauH','isTauHTauM','isTauHTauE',
+                           #'isTauHTauH','isTauHTauM','isTauHTauE',
                            #'isTauMTauM','isTauMTauE','isTauETauE',
                            #'isTauH','isTauM','isTauE',
                            ]
@@ -94,12 +96,12 @@ class TrainData_DiTau_truth(TrainData_DiTau):
 
         #self.regressiontargetclasses=['uncPt','Pt']
 
-        self.reducedtruthclasses=['isB','isC','isLight','isTauTau']
+        self.reducedtruthclasses=['isB','isC','isLight']#,'isTauTau']
         self.reducedtruthmap = {
-            'isB'     : ['isB','isBB',],
-            'isC'     : ['isC','isCC',],
+            'isB'     : ['isB'],
+            'isC'     : ['isC'],
             'isLight' : ['isUD','isS','isG'],
-            'isTauTau': ['isTauHTauH','isTauHTauM','isTauHTauE'],
+            #'isTauTau': ['isTauHTauH','isTauHTauM','isTauHTauE'],
         }
         self.reducedreferenceclass='isB'
         self.referenceclass='isB'
@@ -118,6 +120,16 @@ class TrainData_DiTau_truth(TrainData_DiTau):
         self.nsamples=tree.GetEntries()
         
         Tuple = self.readTreeFromRootToTuple(filename)
+
+        #if self.remove and self.weight:
+        #    print('Warning, dont both weight and remove')
+        #if self.remove:
+        #    print('Will remove')
+        #if self.weight:
+        #    print('Will weight')
+
+        #print('Initial shape:')
+        #print(Tuple.shape)
 
         undef=Tuple['isUndefined']
         if self.remove:
@@ -172,6 +184,7 @@ class TrainData_DiTau_truth(TrainData_DiTau):
                     
         x = [truthtuple[truth] for truth in self.truthclasses]
         x = np.vstack(x).transpose()
+        #x = x.astype('float32') - 0.5
 
         if self.remove:
             weights   = weights[ notremoves > 0]
@@ -183,11 +196,21 @@ class TrainData_DiTau_truth(TrainData_DiTau):
             x         = x[weights > 0]
             weights   = weights[ weights > 0]
 
-        # remove samples with no predicted class
-        skip = np.all(alltruth==0, axis=1)
-        alltruth = alltruth[~skip]
-        x        = x[~skip]
-        weights  = weights[~skip]
+
+        #if self.remove or self.weight:
+        if True:
+            # remove samples with no predicted class
+            skip = np.all(alltruth==0, axis=1)
+            alltruth = alltruth[~skip]
+            x        = x[~skip]
+            weights  = weights[~skip]
+
+            # remove samples with multiple predicted classes
+            skip = np.sum(alltruth, axis=1)>1
+            alltruth = alltruth[~skip]
+            x        = x[~skip]
+            weights  = weights[~skip]
+
 
         newnsamp=alltruth.shape[0]
         logging.info('reduced content to {}%'.format(int(float(newnsamp)/float(self.nsamples)*100)))
@@ -195,6 +218,19 @@ class TrainData_DiTau_truth(TrainData_DiTau):
 
         if weights.ndim>1:
             weights = weights.reshape(weights.shape[0])
+
+        print(self.truthclasses)
+        print(x)
+        print(self.reducedtruthclasses)
+        print(alltruth)
+        print(np.sum(alltruth,axis=0))
+        print(weights)
+        print('Final samples: {}'.format(self.nsamples))
+
+        nox = np.all(x<0, axis=1)
+        print('No x: {}'.format(np.sum(nox)))
+        noy = np.all(alltruth==0, axis=1)
+        print('No y: {}'.format(np.sum(noy)))
 
         self.w=[weights]
         self.x=[x]
@@ -206,8 +242,8 @@ class TrainData_DiTau_glb(TrainData_DiTau):
     def __init__(self):
         TrainData_DiTau.__init__(self)
         
-        self.addBranches([#'jet_pt', 
-                          #'jet_eta',
+        self.addBranches(['jet_pt', 
+                          'jet_eta',
                           'nCpfcand',
                           'nNpfcand',
                           'nsv',
@@ -328,16 +364,26 @@ class TrainData_DiTau_glb(TrainData_DiTau):
             x_global  = x_global[notremoves > 0]
             alltruth  = alltruth[notremoves > 0]
 
+
         if self.weight:
             x_global  = x_global[weights > 0]
             alltruth  = alltruth[weights > 0]
             weights   = weights[ weights > 0]
 
-        # remove samples with no predicted class
-        skip = np.all(alltruth==0, axis=1)
-        alltruth = alltruth[~skip]
-        x_global = x_global[~skip]
-        weights  = weights[~skip]
+        #if self.remove or self.weight:
+        if True:
+            # remove samples with no predicted class
+            skip = np.all(alltruth==0, axis=1)
+            alltruth = alltruth[~skip]
+            x_global = x_global[~skip]
+            weights  = weights[~skip]
+
+            # remove samples with multiple predicted classes
+            skip = np.sum(alltruth, axis=1)>1
+            alltruth = alltruth[~skip]
+            x_global = x_global[~skip]
+            weights  = weights[~skip]
+
 
         newnsamp=x_global.shape[0]
         logging.info('reduced content to {}%'.format(int(float(newnsamp)/float(self.nsamples)*100)))
@@ -357,8 +403,8 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
     def __init__(self):
         TrainData_DiTau.__init__(self)
         
-        self.addBranches([#'jet_pt', 
-                          #'jet_eta',
+        self.addBranches(['jet_pt', 
+                          'jet_eta',
                           'nCpfcand',
                           'nNpfcand',
                           'nsv',
@@ -559,14 +605,26 @@ class TrainData_DiTau_glb_cpf_npf_sv(TrainData_DiTau):
             alltruth  = alltruth[weights > 0]
             weights   = weights[ weights > 0]
 
-        # remove samples with no predicted class
-        skip = np.all(alltruth==0, axis=1)
-        alltruth = alltruth[~skip]
-        x_global = x_global[~skip]
-        x_cpf    = x_cpf[~skip]
-        x_npf    = x_npf[~skip]
-        x_sv     = x_sv[~skip]
-        weights  = weights[~skip]
+        #if self.remove or self.weight:
+        if True:
+            # remove samples with no predicted class
+            skip = np.all(alltruth==0, axis=1)
+            alltruth = alltruth[~skip]
+            x_global = x_global[~skip]
+            x_cpf    = x_cpf[~skip]
+            x_npf    = x_npf[~skip]
+            x_sv     = x_sv[~skip]
+            weights  = weights[~skip]
+
+            # remove samples with multiple predicted classes
+            skip = np.sum(alltruth, axis=1)>1
+            alltruth = alltruth[~skip]
+            x_global = x_global[~skip]
+            x_cpf    = x_cpf[~skip]
+            x_npf    = x_npf[~skip]
+            x_sv     = x_sv[~skip]
+            weights  = weights[~skip]
+
 
         newnsamp=x_global.shape[0]
         logging.info('reduced content to {}%'.format(int(float(newnsamp)/float(self.nsamples)*100)))
@@ -604,6 +662,14 @@ class TrainData_DiTau_glb_2cat(TrainData_DiTau_glb):
 class TrainData_DiTau_glb_2cat_background(TrainData_DiTau_glb):
     def __init__(self):
         TrainData_DiTau_glb.__init__(self)
+        self.truthclasses=['isB',#'isBB',#'isGBB',
+                           #'isLeptonicB','isLeptonicB_C',
+                           'isC',#'isCC',#'isGCC',
+                           'isUD','isS','isG',
+                           #'isTauHTauH','isTauHTauM','isTauHTauE',
+                           #'isTauMTauM','isTauMTauE','isTauETauE',
+                           #'isTauH','isTauM','isTauE',
+                           ]
         self.reducedtruthclasses=['isB','isLight']
         self.reducedtruthmap = {
             'isB'     : ['isB',],
@@ -617,6 +683,14 @@ class TrainData_DiTau_glb_2cat_background(TrainData_DiTau_glb):
 class TrainData_DiTau_glb_3cat_background(TrainData_DiTau_glb):
     def __init__(self):
         TrainData_DiTau_glb.__init__(self)
+        self.truthclasses=['isB',#'isBB',#'isGBB',
+                           #'isLeptonicB','isLeptonicB_C',
+                           'isC',#'isCC',#'isGCC',
+                           'isUD','isS','isG',
+                           #'isTauHTauH','isTauHTauM','isTauHTauE',
+                           #'isTauMTauM','isTauMTauE','isTauETauE',
+                           #'isTauH','isTauM','isTauE',
+                           ]
         self.reducedtruthclasses=['isB','isC','isLight']
         self.reducedtruthmap = {
             'isB'     : ['isB',],
