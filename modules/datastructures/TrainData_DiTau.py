@@ -767,8 +767,8 @@ class TrainData_DiTau_glb_cpf_npf_sv_4cat(TrainData_DiTau_glb_cpf_npf_sv):
         TrainData_DiTau_glb_cpf_npf_sv.__init__(self)
         self.reducedtruthclasses=['isB','isC','isLight','isTauTau']
         self.reducedtruthmap = {
-            'isB'     : ['isB','isBB',],
-            'isC'     : ['isC','isCC',],
+            'isB'     : ['isB'],
+            'isC'     : ['isC'],
             'isLight' : ['isUD','isS','isG'],
             'isTauTau': ['isTauHTauH'],#'isTauHTauM','isTauHTauE'],
         }

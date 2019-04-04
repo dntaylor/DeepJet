@@ -4,6 +4,8 @@ from DeepJetCore.training.training_base import training_base
 from Losses import loss_NLL, loss_meansquared   
 from DeepJetCore.modeltools import fixLayersContaining,printLayerInfosAndWeights
 
+import subprocess
+
 import tensorflow as tf
 from keras import backend as k
 
@@ -48,6 +50,10 @@ if not train.modelSet():
     
     from keras.utils import plot_model
     plot_model(train.keras_model, to_file=train.outputDir+'model.eps')
+
+    # convert eps to png
+    command = ['convert', '-density', '300', train.outputDir+'model.eps', train.outputDir+'model.png']
+    result = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
 
 print(train.keras_model.summary())
